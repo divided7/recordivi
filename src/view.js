@@ -4,42 +4,34 @@ const { writeFile } = require("fs");
 
 const { dialog, Menu } = remote;
 
-// Global state
-let mediaRecorder; // MediaRecorder instance to capture footage
 const recordedChunks = [];
 
-// Buttons
 const video = document.querySelector("video");
 
 const start = document.getElementById("start");
 start.onclick = (e) => {
   mediaRecorder.start();
-  startBtn.classList.add("is-danger");
-  startBtn.innerText = "Recording";
 };
 
-const stopBtn = document.getElementById("stop");
+const stop = document.getElementById("stop");
 
-stopBtn.onclick = (e) => {
+stop.onclick = (e) => {
   mediaRecorder.stop();
-  startBtn.classList.remove("is-danger");
-  startBtn.innerText = "Start";
 };
 
-const videoSelectBtn = document.getElementById("pick");
-videoSelectBtn.onclick = getVideoSources;
+const pick = document.getElementById("pick");
+pick.onclick = getScreens;
 
-// Get the available video sources
-async function getVideoSources() {
+async function getScreens() {
   const inputSources = await desktopCapturer.getSources({
     types: ["window", "screen"],
   });
 
   const videoOptionsMenu = Menu.buildFromTemplate(
-    inputSources.map((source) => {
+    inputSources.map((screen) => {
       return {
-        label: source.name,
-        click: () => selectSource(source),
+        label: screen.name,
+        click: () => selectScreen(screen),
       };
     })
   );
@@ -47,46 +39,38 @@ async function getVideoSources() {
   videoOptionsMenu.popup();
 }
 
-// Change the videoSource window to record
-async function selectSource(source) {
-  videoSelectBtn.innerText = source.name;
+async function selectScreen(screen) {
+  pick.innerText = screen.name;
 
-  const constraints = {
+  const options = {
     audio: false,
     video: {
       mandatory: {
         chromeMediaSource: "desktop",
-        chromeMediaSourceId: source.id,
+        chromeMediaSourceId: screen.id,
       },
     },
   };
 
-  // Create a Stream
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  const view = await navigator.mediaDevices.getUserMedia(options);
 
-  // Preview the source in a video element
-  videoElement.srcObject = stream;
-  videoElement.play();
+  video.srcObject = view;
+  video.play();
 
-  // Create the Media Recorder
-  const options = { mimeType: "video/webm; codecs=vp9" };
-  mediaRecorder = new MediaRecorder(stream, options);
+  const recorder_options = { mimeType: "video/webm; codecs=vp9" };
+  mediaRecorder = new MediaRecorder(view, recorder_options);
 
-  // Register Event Handlers
-  mediaRecorder.ondataavailable = handleDataAvailable;
-  mediaRecorder.onstop = handleStop;
+  mediaRecorder.ondataavailable = data_avail;
+  mediaRecorder.onstop = stopit;
 
-  // Updates the UI
 }
 
-// Captures all recorded chunks
-function handleDataAvailable(e) {
+function data_avail(x) {
   console.log("video data available");
-  recordedChunks.push(e.data);
+  recordedChunks.push(x.data);
 }
 
-// Saves the video file on stop
-async function handleStop(e) {
+async function stopit(x) {
   const blob = new Blob(recordedChunks, {
     type: "video/webm; codecs=vp9",
   });

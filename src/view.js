@@ -4,19 +4,23 @@ const { writeFile } = require("fs");
 
 const { dialog, Menu } = remote;
 
-const recordedChunks = [];
+let mediaRecorder;
+const recordedSegments = [];
 
 const video = document.querySelector("video");
 
 const start = document.getElementById("start");
+
 start.onclick = (e) => {
   mediaRecorder.start();
+  start.style.display="none";
 };
 
 const stop = document.getElementById("stop");
 
 stop.onclick = (e) => {
   mediaRecorder.stop();
+  start.disabled=false;
 };
 
 const pick = document.getElementById("pick");
@@ -27,7 +31,7 @@ async function getScreens() {
     types: ["window", "screen"],
   });
 
-  const videoOptionsMenu = Menu.buildFromTemplate(
+  const screensMenu = Menu.buildFromTemplate(
     inputSources.map((screen) => {
       return {
         label: screen.name,
@@ -36,7 +40,7 @@ async function getScreens() {
     })
   );
 
-  videoOptionsMenu.popup();
+  screensMenu.popup();
 }
 
 async function selectScreen(screen) {
@@ -62,16 +66,15 @@ async function selectScreen(screen) {
 
   mediaRecorder.ondataavailable = data_avail;
   mediaRecorder.onstop = stopit;
-
 }
 
 function data_avail(x) {
   console.log("video data available");
-  recordedChunks.push(x.data);
+  recordedSegments.push(x.data);
 }
 
 async function stopit(x) {
-  const blob = new Blob(recordedChunks, {
+  const blob = new Blob(recordedSegments, {
     type: "video/webm; codecs=vp9",
   });
 

@@ -13,7 +13,8 @@ const createWindow = () => {
     height: 600,
     webPreferences:{
       nodeIntegration:true
-    }
+    },
+    show:false
   });
 
   // and load the index.html of the app.
@@ -21,6 +22,9 @@ const createWindow = () => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  mainWindow.maximize();
+  mainWindow.show();
 };
 
 // This method will be called when Electron has finished
